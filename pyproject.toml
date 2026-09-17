@@ -1,0 +1,73 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# Distribution name. ``qaudit`` on PyPI is an unrelated project; the import
+# package and console command are still ``qaudit``.
+name = "qaudit-backtest"
+description = "Quantitative Backtest Validation & Bias Detection"
+authors = [{name = "Chung Shing Mars Wong"}]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
+]
+keywords = [
+    "backtesting",
+    "quantitative-finance",
+    "lookahead-bias",
+    "survivorship-bias",
+    "validation",
+]
+dependencies = [
+    "numpy>=1.24,<3",
+    "pandas>=2.0,<4",
+    "scipy>=1.10,<2",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.8,<3",
+    "pytest>=7.4,<10",
+]
+
+[project.scripts]
+qaudit = "qaudit.cli:cli"
+qaudit-demo = "qaudit.demo:cli"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.package-data]
+qaudit = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = { attr = "qaudit.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["qaudit*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+filterwarnings = ["error"]
+
+[tool.mypy]
+# Match the running interpreter and its dependency stubs. CI checks 3.10-3.13.
+ignore_missing_imports = true

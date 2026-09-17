@@ -1,0 +1,74 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} / ${{ matrix.dependencies }}
+    runs-on: ubuntu-latest
+    # The full suite takes roughly ten minutes on hosted runners; the dynamic
+    # probes dominate. Leave headroom.
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        dependencies: [latest]
+        include:
+          - python-version: "3.10"
+            dependencies: minimum
+          - python-version: "3.12"
+            dependencies: numpy1
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install project
+        env:
+          QAUDIT_DEPENDENCIES: ${{ matrix.dependencies }}
+        run: |
+          python -m pip install --upgrade pip
+          case "$QAUDIT_DEPENDENCIES" in
+            minimum)
+              python -m pip install -e '.[dev]' 'numpy==1.24.0' 'pandas==2.0.0' 'scipy==1.10.0' 'pytest==7.4.0' 'mypy==1.8.0' ;;
+            numpy1)
+              python -m pip install -e '.[dev]' 'numpy<2' ;;
+            *)
+              # pyarrow enables the arrow-backed-frame test, which is skipped
+              # when the optional dependency is absent.
+              python -m pip install -e '.[dev]' pyarrow ;;
+          esac
+      - name: Check environment
+        run: |
+          python -m pip check
+          python -c "import numpy, pandas, scipy; print('numpy', numpy.__version__, 'pandas', pandas.__version__, 'scipy', scipy.__version__)"
+      - name: Type check
+        run: python -m mypy src/qaudit
+      - name: Test suite
+        run: python -m pytest -W error -q
+      - name: Run the example and audit its CSV exports
+        run: |
+          python examples/first_audit.py --output-dir "$RUNNER_TEMP/first-audit"
+          python -m qaudit \
+            --signals "$RUNNER_TEMP/first-audit/signals.csv" \
+            --asset-returns "$RUNNER_TEMP/first-audit/asset_returns.csv" \
+            --positions "$RUNNER_TEMP/first-audit/positions.csv" \
+            --strategy-returns "$RUNNER_TEMP/first-audit/strategy_returns.csv" \
+            --universe "$RUNNER_TEMP/first-audit/universe.csv" \
+            --prices "$RUNNER_TEMP/first-audit/prices.csv" \
+            --cost-bps 10 --trials 1 --output "$RUNNER_TEMP/csv-audit.json"

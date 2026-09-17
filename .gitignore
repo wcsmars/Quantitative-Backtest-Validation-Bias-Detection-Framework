@@ -1,0 +1,43 @@
+.*
+!.github/
+!.gitignore
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+config.local.*
+credentials.yaml
+credentials.yml
+credentials.json
+secrets.*
+credentials/
+private/
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Private data and operational records
+data/raw/
+data/private/
+*.log
+
+# Python and editor artifacts
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+.DS_Store
+.idea/
+.vscode/
+
+# Audit and demonstration output
+results/
+demo-output*/
